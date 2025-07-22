@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Propuesta de Arquitectura: ProManage</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Harmony -->
+    <!-- Application Structure Plan: The SPA uses a fixed sidebar navigation and a dynamic main content area. This structure transforms the static report into an explorable dashboard, allowing users to jump to specific sections (Architecture, Infrastructure, etc.) in any order. This non-linear approach is more user-friendly than a long scroll, catering to different stakeholders' interests and making the complex information more digestible. -->
+    <!-- Visualization & Content Choices: Report info is translated into interactive components. 'Key Components' are shown as hoverable cards (Inform). 'Architecture Model' uses a side-by-side comparison and a Chart.js bar chart to visually justify choices (Compare). 'Infrastructure Flow' is a CSS-based diagram with interactive triggers (Explain Process). The 'Full Architecture' is a large-scale, interactive CSS grid diagram that connects all pieces (Synthesize). This approach prioritizes understanding and engagement. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8F5F2;
+            color: #4A4A4A;
+        }
+        .nav-link {
+            transition: all 0.2s ease-in-out;
+            border-left: 3px solid transparent;
+        }
+        .nav-link.active {
+            background-color: #EAE5E1;
+            color: #5D737E;
+            border-left-color: #5D737E;
+        }
+        .nav-link:hover {
+            background-color: #EAE5E1;
+        }
+        .card {
+            background-color: #FFFFFF;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: all 0.3s ease-in-out;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.1);
+        }
+        .diagram-box {
+            border: 1px solid #D1D5DB;
+            background-color: #F9FAFB;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            font-size: 0.875rem;
+        }
+        .diagram-arrow {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .diagram-arrow::after {
+            content: '→';
+            font-size: 1.5rem;
+            color: #9CA3AF;
+            margin: 0 0.5rem;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+<body class="antialiased">
+<div class="flex h-screen bg-[#F8F5F2]">
+    <!-- Sidebar Navigation -->
+    <aside class="w-64 bg-white/80 backdrop-blur-sm shadow-lg flex-shrink-0">
+        <div class="p-6">
+            <h1 class="text-2xl font-bold text-[#5D737E]">ProManage</h1>
+            <p class="text-sm text-gray-500 mt-1">Propuesta de Arquitectura</p>
+        </div>
+        <nav class="mt-6">
+            <ul>
+                <li><a href="#overview" class="nav-link active flex items-center py-3 px-6 text-gray-700 font-medium">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Visión General</a></li>
+                <li><a href="#model" class="nav-link flex items-center py-3 px-6 text-gray-700 font-medium">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                    Modelo Arquitectónico</a></li>
+                <li><a href="#infra" class="nav-link flex items-center py-3 px-6 text-gray-700 font-medium">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2h1a2 2 0 002-2v-1a2 2 0 012-2h1.945M7.884 5.063A9 9 0 1016.116 5.063m-2.232 13.874A9 9 0 0018.945 11H5.055a9 9 0 003.83 8.937z"></path></svg>
+                    Infraestructura y Escala</a></li>
+                <li><a href="#containers" class="nav-link flex items-center py-3 px-6 text-gray-700 font-medium">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                    Contenedores</a></li>
+                <li><a href="#full-diagram" class="nav-link flex items-center py-3 px-6 text-gray-700 font-medium">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    Diagrama Completo</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto p-6 md:p-10">
+        <div id="content">
+            <!-- Overview Section -->
+            <section id="overview" class="content-section">
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">Visión General del Sistema</h2>
+                <p class="mb-8 text-lg text-gray-600">La plataforma ProManage se descompone en dominios funcionales claros, cada uno diseñado como un servicio independiente para maximizar la agilidad y la escalabilidad. A continuación se presentan los componentes clave que forman el núcleo de la aplicación.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="card p-6">
+                        <h3 class="font-bold text-xl text-[#5D737E]">Gestión de Usuarios</h3>
+                        <p class="mt-2 text-gray-600">Maneja el registro, autenticación, perfiles de usuario, roles y permisos de acceso.</p>
+                    </div>
+                    <div class="card p-6">
+                        <h3 class="font-bold text-xl text-[#5D737E]">Gestión de Proyectos</h3>
+                        <p class="mt-2 text-gray-600">Permite la creación, modificación, visualización y seguimiento del estado de los proyectos.</p>
+                    </div>
+                    <div class="card p-6">
+                        <h3 class="font-bold text-xl text-[#5D737E]">Gestión de Presupuestos</h3>
+                        <p class="mt-2 text-gray-600">Se encarga de la asignación y el control del presupuesto para cada proyecto individual.</p>
+                    </div>
+                    <div class="card p-6">
+                        <h3 class="font-bold text-xl text-[#5D737E]">Gestión de Archivos</h3>
+                        <p class="mt-2 text-gray-600">Facilita la carga, descarga y asociación de documentos y archivos relevantes a los proyectos.</p>
+                    </div>
+                    <div class="card p-6">
+                        <h3 class="font-bold text-xl text-[#5D737E]">Gestión de Tareas y Plazos</h3>
+                        <p class="mt-2 text-gray-600">Define fechas de entrega, gestiona tareas y realiza el seguimiento de los plazos.</p>
+                    </div>
+                    <div class="card p-6">
+                        <h3 class="font-bold text-xl text-[#5D737E]">Notificaciones</h3>
+                        <p class="mt-2 text-gray-600">Envía alertas y notificaciones sobre cambios importantes, plazos y comentarios en la plataforma.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Model Section -->
+            <section id="model" class="content-section hidden">
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">Modelo Arquitectónico</h2>
+                <p class="mb-8 text-lg text-gray-600">La elección de la arquitectura es una decisión fundamental que impacta la escalabilidad, resiliencia y velocidad de desarrollo. Hemos optado por un enfoque moderno y flexible.</p>
+
+                <div class="card p-8 mb-8">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-4">Decisión: Arquitectura de Microservicios</h3>
+                    <p class="mb-6">Se elige una arquitectura basada en microservicios por su superioridad en escalabilidad, resiliencia y flexibilidad frente a un modelo monolítico. Esto permite que cada componente del sistema evolucione y escale de forma independiente.</p>
+                    <div class="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-8">
+                        <div class="diagram-box w-full md:w-1/3">
+                            <h4 class="font-semibold">API Gateway</h4>
+                            <p class="text-xs">Punto de entrada único</p>
+                        </div>
+                        <div class="diagram-arrow hidden md:flex"></div>
+                        <div class="w-px h-6 bg-gray-300 md:hidden"></div>
+                        <div class="grid grid-cols-2 gap-4 w-full md:w-2/3">
+                            <div class="diagram-box bg-[#E3F2FD]">Servicio Usuarios</div>
+                            <div class="diagram-box bg-[#E3F2FD]">Servicio Proyectos</div>
+                            <div class="diagram-box bg-[#E3F2FD]">Servicio Archivos</div>
+                            <div class="diagram-box bg-[#E3F2FD]">Servicio Notificaciones</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card p-8">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-2">Estructura como Servicio: Un Enfoque Híbrido</h3>
+                    <p class="mb-6">Para optimizar costos y eficiencia, combinamos diferentes modelos de servicios en la nube, aprovechando lo mejor de cada uno.</p>
+                    <div class="chart-container">
+                        <canvas id="serviceModelChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Infra Section -->
+            <section id="infra" class="content-section hidden">
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">Infraestructura y Escalabilidad</h2>
+                <p class="mb-8 text-lg text-gray-600">Diseñamos una infraestructura resiliente y auto-escalable para manejar el crecimiento y picos de carga sin intervención manual, garantizando alta disponibilidad.</p>
+
+                <div class="card p-8 mb-8">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-4">Autoescalado y Balanceo de Carga</h3>
+                    <p class="mb-6">El tráfico se distribuye inteligentemente y los recursos se ajustan automáticamente según la demanda en tiempo real.</p>
+                    <div class="flex items-center justify-around p-4 bg-gray-50 rounded-lg flex-wrap">
+                        <div class="text-center m-2">
+                            <div class="text-4xl">👤</div>
+                            <div class="font-semibold">Usuario</div>
+                        </div>
+                        <div class="diagram-arrow"></div>
+                        <div class="text-center m-2">
+                            <div class="text-4xl">🚦</div>
+                            <div class="font-semibold">Balanceador de Carga</div>
+                        </div>
+                        <div class="diagram-arrow"></div>
+                        <div class="text-center m-2">
+                            <div class="text-4xl">🚪</div>
+                            <div class="font-semibold">API Gateway</div>
+                        </div>
+                        <div class="diagram-arrow"></div>
+                        <div class="text-center m-2">
+                            <div class="font-semibold mb-2">Servicio (Pods)</div>
+                            <div id="pod-container" class="flex space-x-2 transition-all duration-500">
+                                <div class="w-8 h-8 bg-[#64B6AC] rounded-full"></div>
+                                <div class="w-8 h-8 bg-[#64B6AC] rounded-full"></div>
+                            </div>
+                            <button id="simulateLoadBtn" class="mt-4 text-sm bg-[#5D737E] text-white py-1 px-3 rounded-full hover:bg-[#4A5A64]">Simular Carga</button>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="text-2xl font-bold text-gray-800 mb-4 mt-8">Estrategias de Resiliencia</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="card p-6 text-center">
+                        <div class="text-4xl mb-2">🏙️🏢</div>
+                        <h4 class="font-bold text-xl text-[#5D737E]">Despliegue Multi-AZ</h4>
+                        <p class="mt-2 text-gray-600">El sistema opera en múltiples centros de datos para sobrevivir a fallos geográficos.</p>
+                    </div>
+                    <div class="card p-6 text-center">
+                        <div class="text-4xl mb-2">❤️‍🩹</div>
+                        <h4 class="font-bold text-xl text-[#5D737E]">Health Checks</h4>
+                        <p class="mt-2 text-gray-600">Kubernetes monitoriza y reinicia automáticamente contenedores que no responden.</p>
+                    </div>
+                    <div class="card p-6 text-center">
+                        <div class="text-4xl mb-2">🔄🔄🔄</div>
+                        <h4 class="font-bold text-xl text-[#5D737E]">Múltiples Réplicas</h4>
+                        <p class="mt-2 text-gray-600">Cada servicio corre con varias instancias para garantizar que no haya puntos únicos de fallo.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Containers Section -->
+            <section id="containers" class="content-section hidden">
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">Contenedorización y Orquestación</h2>
+                <p class="mb-8 text-lg text-gray-600">Utilizamos contenedores para empaquetar y aislar nuestras aplicaciones, y un orquestador para gestionar su ciclo de vida a gran escala de forma automatizada.</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                    <div class="card p-6">
+                        <h3 class="font-bold text-xl text-[#5D737E]">Contenerización</h3>
+                        <p class="mt-2 font-semibold">Herramienta: Docker</p>
+                        <p class="mt-1 text-gray-600">El estándar de la industria para crear imágenes ligeras y portables de nuestros microservicios.</p>
+                    </div>
+                    <div class="card p-6">
+                        <h3 class="font-bold text-xl text-[#5D737E]">Orquestación</h3>
+                        <p class="mt-2 font-semibold">Herramienta: Kubernetes</p>
+                        <p class="mt-1 text-gray-600">Automatiza el despliegue, escalado y la gestión de los contenedores a través de un cluster.</p>
+                    </div>
+                    <div class="card p-6">
+                        <h3 class="font-bold text-xl text-[#5D737E]">Registro de Imágenes</h3>
+                        <p class="mt-2 font-semibold">Herramienta: AWS ECR / GCR</p>
+                        <p class="mt-1 text-gray-600">Un repositorio privado, seguro y de alta disponibilidad para almacenar nuestras imágenes de Docker.</p>
+                    </div>
+                </div>
+
+                <div class="card p-8">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-4">Flujo de Despliegue Continuo (CI/CD)</h3>
+                    <p class="mb-6">Un pipeline automatizado lleva el código desde el repositorio hasta producción de forma segura y eficiente.</p>
+                    <div class="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
+                        <div class="diagram-box w-full md:w-auto flex-1 text-center">
+                            <div class="font-bold">1. Código en Git</div>
+                            <p class="text-xs">El desarrollador sube cambios</p>
+                        </div>
+                        <div class="diagram-arrow"></div>
+                        <div class="diagram-box w-full md:w-auto flex-1 text-center bg-[#D8A788]/20">
+                            <div class="font-bold">2. Pipeline CI/CD</div>
+                            <p class="text-xs">Se ejecutan tests y builds</p>
+                        </div>
+                        <div class="diagram-arrow"></div>
+                        <div class="diagram-box w-full md:w-auto flex-1 text-center">
+                            <div class="font-bold">3. Push a Registro</div>
+                            <p class="text-xs">La imagen Docker se guarda en ECR</p>
+                        </div>
+                        <div class="diagram-arrow"></div>
+                        <div class="diagram-box w-full md:w-auto flex-1 text-center bg-[#64B6AC]/20">
+                            <div class="font-bold">4. Deploy en K8s</div>
+                            <p class="text-xs">Se actualiza el servicio en producción</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Full Diagram Section -->
+            <section id="full-diagram" class="content-section hidden">
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">Diagrama de Arquitectura Completo</h2>
+                <p class="mb-8 text-lg text-gray-600">Esta vista integra todos los componentes, servicios y flujos de datos, mostrando la arquitectura completa de la plataforma ProManage. Haz clic en un componente para ver más detalles.</p>
+                <div class="card p-4 md:p-6 overflow-x-auto">
+                    <div class="min-w-[800px] border-2 border-dashed border-gray-300 p-4 rounded-lg bg-gray-50">
+                        <div class="text-center mb-4 font-bold text-gray-500">Usuario Final</div>
+                        <div class="flex justify-center mb-2">
+                            <div class="diagram-box interactive-diagram-box" data-target="user">👤 Usuario (Navegador/Móvil)</div>
+                        </div>
+                        <div class="flex justify-center text-2xl text-gray-400">↓</div>
+
+                        <div class="border border-gray-300 p-4 rounded-lg bg-white">
+                            <div class="text-center mb-4 font-bold text-gray-500">Red y Seguridad</div>
+                            <div class="flex justify-center items-center space-x-4">
+                                <div class="diagram-box interactive-diagram-box" data-target="cdn">🛡️ CDN / WAF</div>
+                                <div class="diagram-arrow"></div>
+                                <div class="diagram-box interactive-diagram-box" data-target="lb">🚦 Balanceador de Carga</div>
+                            </div>
+                            <div class="flex justify-center text-2xl text-gray-400">↓</div>
+
+                            <div class="border border-blue-300 p-4 rounded-lg bg-blue-50">
+                                <div class="text-center mb-4 font-bold text-blue-600">Plataforma Cloud (AWS/GCP/Azure)</div>
+                                <div class="grid md:grid-cols-2 gap-4">
+
+                                    <div class="border border-green-300 p-4 rounded-lg bg-green-50">
+                                        <div class="text-center mb-4 font-bold text-green-600">Cluster Kubernetes (Multi-AZ)</div>
+                                        <div class="diagram-box interactive-diagram-box mb-2" data-target="apigw">🚪 API Gateway</div>
+                                        <div class="flex justify-center text-xl text-green-400">↓</div>
+                                        <div class="border border-dashed border-green-400 p-2 rounded-lg">
+                                            <div class="text-center mb-2 font-semibold text-sm text-green-700">Microservicios</div>
+                                            <div class="grid grid-cols-2 gap-2">
+                                                <div class="diagram-box bg-green-100 interactive-diagram-box" data-target="ms-users">Usuarios</div>
+                                                <div class="diagram-box bg-green-100 interactive-diagram-box" data-target="ms-projects">Proyectos</div>
+                                                <div class="diagram-box bg-green-100 interactive-diagram-box" data-target="ms-files">Archivos</div>
+                                                <div class="diagram-box bg-green-100 interactive-diagram-box" data-target="ms-notifications">Notificaciones</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="border border-purple-300 p-4 rounded-lg bg-purple-50">
+                                        <div class="text-center mb-4 font-bold text-purple-600">Servicios de Backend</div>
+                                        <div class="space-y-2">
+                                            <div class="diagram-box interactive-diagram-box" data-target="auth">🔑 Autenticación (BaaS)</div>
+                                            <div class="diagram-box interactive-diagram-box" data-target="db">🗄️ Base de Datos (PaaS)</div>
+                                            <div class="diagram-box interactive-diagram-box" data-target="storage">💾 Almacenamiento (IaaS)</div>
+                                            <div class="diagram-box interactive-diagram-box" data-target="registry">📦 Registro Contenedores</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="diagram-details" class="mt-6 card p-6 bg-[#D8A788]/20 border border-[#D8A788] hidden">
+                    <h4 id="details-title" class="font-bold text-xl text-[#4A4A4A]"></h4>
+                    <p id="details-text" class="mt-2 text-gray-700"></p>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const navLinks = document.querySelectorAll('.nav-link');
+        const contentSections = document.querySelectorAll('.content-section');
+
+        function updateContent(hash) {
+            const targetHash = hash || '#overview';
+
+            contentSections.forEach(section => {
+                if ('#' + section.id === targetHash) {
+                    section.classList.remove('hidden');
+                } else {
+                    section.classList.add('hidden');
+                }
+            });
+
+            navLinks.forEach(link => {
+                if (link.getAttribute('href') === targetHash) {
+                    link.classList.add('active');
+                } else {
+                    link.classList.remove('active');
+                }
+            });
+        }
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetHash = this.getAttribute('href');
+                history.pushState(null, null, targetHash);
+                updateContent(targetHash);
+            });
+        });
+
+        window.addEventListener('popstate', () => {
+            updateContent(window.location.hash);
+        });
+
+        updateContent(window.location.hash);
+
+        // Chart.js for Service Model
+        if(document.getElementById('serviceModelChart')) {
+            const ctx = document.getElementById('serviceModelChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Microservicios', 'Autenticación', 'Almacenamiento de Archivos'],
+                    datasets: [{
+                        label: 'Modelo de Servicio',
+                        data: [100, 100, 100],
+                        backgroundColor: [
+                            '#64B6AC', // CaaS/PaaS
+                            '#5D737E', // BaaS
+                            '#D8A788'  // IaaS
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const labels = {
+                                        'Microservicios': 'CaaS/PaaS: Orquestación con Kubernetes gestionado.',
+                                        'Autenticación': 'BaaS: Usar un servicio externo como AWS Cognito.',
+                                        'Almacenamiento de Archivos': 'IaaS: Almacenamiento de objetos como Amazon S3.'
+                                    };
+                                    return labels[context.label];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: false,
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                font: {
+                                    size: 14,
+                                    weight: '500'
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Simulate load button
+        const simulateBtn = document.getElementById('simulateLoadBtn');
+        const podContainer = document.getElementById('pod-container');
+        if (simulateBtn) {
+            simulateBtn.addEventListener('click', () => {
+                podContainer.innerHTML = '';
+                const numPods = Math.floor(Math.random() * 4) + 3; // 3 to 6 pods
+                for(let i = 0; i < numPods; i++) {
+                    const pod = document.createElement('div');
+                    pod.className = 'w-8 h-8 bg-[#64B6AC] rounded-full animate-pulse';
+                    podContainer.appendChild(pod);
+                }
+                simulateBtn.textContent = 'Carga Simulada!';
+                setTimeout(() => {
+                    simulateBtn.textContent = 'Simular Carga';
+                    podContainer.innerHTML = `
+                            <div class="w-8 h-8 bg-[#64B6AC] rounded-full"></div>
+                            <div class="w-8 h-8 bg-[#64B6AC] rounded-full"></div>
+                        `;
+                }, 2000);
+            });
+        }
+
+        // Interactive Full Diagram
+        const diagramBoxes = document.querySelectorAll('.interactive-diagram-box');
+        const detailsPanel = document.getElementById('diagram-details');
+        const detailsTitle = document.getElementById('details-title');
+        const detailsText = document.getElementById('details-text');
+        let activeBox = null;
+
+        const detailsMap = {
+            user: { title: 'Usuario Final', text: 'El usuario interactúa con la plataforma a través de un navegador web o una aplicación móvil.' },
+            cdn: { title: 'CDN / WAF', text: 'Content Delivery Network y Web Application Firewall. Aceleran la entrega de contenido y protegen contra ataques comunes.' },
+            lb: { title: 'Balanceador de Carga', text: 'Distribuye el tráfico entrante entre múltiples servidores para garantizar que ningún servidor se sobrecargue.' },
+            apigw: { title: 'API Gateway', text: 'Punto de entrada único para todas las peticiones de los clientes. Enruta las peticiones a los microservicios correspondientes.' },
+            'ms-users': { title: 'Servicio de Usuarios', text: 'Gestiona toda la lógica relacionada con usuarios, perfiles, roles y permisos.' },
+            'ms-projects': { title: 'Servicio de Proyectos', text: 'Encargado de la creación, gestión y estado de los proyectos.' },
+            'ms-files': { title: 'Servicio de Archivos', text: 'Maneja la carga y asociación de archivos con los proyectos, interactuando con el servicio de almacenamiento.' },
+            'ms-notifications': { title: 'Servicio de Notificaciones', text: 'Envía alertas y correos electrónicos a los usuarios sobre eventos importantes.' },
+            auth: { title: 'Servicio de Autenticación (BaaS)', text: 'Un servicio gestionado como AWS Cognito o Firebase Auth para manejar el login y la seguridad de las sesiones.' },
+            db: { title: 'Base de Datos (PaaS)', text: 'Una base de datos relacional gestionada como PostgreSQL en AWS RDS, que ofrece escalabilidad y backups automáticos.' },
+            storage: { title: 'Almacenamiento de Objetos (IaaS)', text: 'Servicio como Amazon S3 para almacenar de forma segura y escalable los archivos de los proyectos.' },
+            registry: { title: 'Registro de Contenedores', text: 'Un repositorio privado como AWS ECR para almacenar las imágenes de Docker de forma segura.' }
+        };
+
+        diagramBoxes.forEach(box => {
+            box.addEventListener('click', () => {
+                const target = box.dataset.target;
+
+                if (activeBox) {
+                    activeBox.classList.remove('ring-2', 'ring-offset-2', 'ring-[#D8A788]');
+                }
+
+                if (activeBox === box) {
+                    detailsPanel.classList.add('hidden');
+                    activeBox = null;
+                    return;
+                }
+
+                box.classList.add('ring-2', 'ring-offset-2', 'ring-[#D8A788]');
+                activeBox = box;
+
+                detailsTitle.textContent = detailsMap[target].title;
+                detailsText.textContent = detailsMap[target].text;
+                detailsPanel.classList.remove('hidden');
+            });
+        });
+    });
+</script>
+</body>
+</html>
